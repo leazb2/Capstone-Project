@@ -69,9 +69,36 @@ def search_recipes(user_ingredients, recipes):
 
     return results
 
+def display_results(results, ingred_input):
+    #Displays search results
+    print("\n" + "=" * 70)
+    print(f"Your ingredients: {ingred_input}")
+    print("=" * 70)
+
+    # no recipes found; could be redirected to add more ingredients later
+    if not results:
+        print("\n❌ No matching recipes found.\n")
+        return
+
+
+    for i, recipe in enumerate(results, 1):
+        #visual indicator
+        bars = "[]" * int(recipe['match_percentage'] / 10)
+
+        print(f"\n{i}. {recipe['name']}")
+        print(f"   Match: {recipe['match_percentage']}% {bars}")
+        print(f"   You have: {', '.join(recipe['matched_ingredients'])}")
+        
+        if recipe['missing_ingredients']:
+            print(f"   Missing: {', '.join(recipe['missing_ingredients'])}")
+
 
 def main():
-    # Current testing: Does input and list parsing work?
+    # main function to run the recipe search and display results
+    print("\n" + "=" * 70)
+    print("SmartFridge - Quick Recipe Search")
+    print("=" * 70)
+
     print("Enter your available ingredients (comma-separated):")
     print("Ex: eggs, bread, cheese, butter\n")
 
@@ -85,21 +112,13 @@ def main():
     
     # parse ingredients and print
     user_ing = parse_ingredients(user_input)
-    print(f"\nSearching with: {', '.join(user_ing)}")
 
     recipes = load_recipes()
 
     results = search_recipes(user_ing, recipes)
-    for i, recipe in enumerate(results, 1):
-        #visual indicator
-        bars = "[]" * int(recipe['match_percentage'] / 10)
 
-        print(f"\n{i}. {recipe['name']}")
-        print(f"   Match: {recipe['match_percentage']}% {bars}")
-        print(f"   You have: {', '.join(recipe['matched_ingredients'])}")
-        
-        if recipe['missing_ingredients']:
-            print(f"   Missing: {', '.join(recipe['missing_ingredients'])}")
+    display_results(results, user_input)
+
 
 if __name__ == "__main__":
     main()

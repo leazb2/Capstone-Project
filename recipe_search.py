@@ -1,3 +1,5 @@
+import json
+
 def parse_ingredients(raw_input):
     # accepts comma-separated or newline-separated ingredients
     # returns a clean list of ingredients
@@ -9,6 +11,12 @@ def parse_ingredients(raw_input):
     cleaned = [ing.strip().lower() for ing in ingredients if ing.strip()]
 
     return cleaned
+
+def load_recipes():
+    # Load recipes from a JSON file
+    with open('recipes.json', 'r') as file:
+        data = json.load(file)
+    return data['recipes']
 
 def main():
     # Current testing: Does input and list parsing work?
@@ -26,6 +34,9 @@ def main():
     # parse ingredients and print
     user_ing = parse_ingredients(user_input)
     print(f"\nCollected ingredients: {', '.join(user_ing)}")
+
+    recipes = load_recipes()
+    print(recipes)
 
 if __name__ == "__main__":
     main()

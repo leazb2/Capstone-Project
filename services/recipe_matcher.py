@@ -1,7 +1,7 @@
 import json
 
 def load_recipes():
-    # Load recipes from a JSON file
+    # load recipes from a JSON file
     with open('recipes.json', 'r') as file:
         data = json.load(file)
     return data['recipes']
@@ -103,7 +103,7 @@ def search_recipes(user_ingredients, recipes, filters=None):
 
 def find_partial_matches(user_ingredients, recipes, filters=None, min_match_threshold=50, exclude_ids=None):
     # finds recipes that partially match user ingredients.
-    # "almost there" recipes - close enough to be worth suggesting.
+    # close enough recipes worth suggesting.
     
     if exclude_ids is None:
         exclude_ids = set()
@@ -111,18 +111,18 @@ def find_partial_matches(user_ingredients, recipes, filters=None, min_match_thre
     partial_matches = []
     
     for recipe in recipes:
-        # Skip recipes that were already shown
+        # skip recipes that were already shown
         if recipe['id'] in exclude_ids:
             continue
         
-        # Apply filters first
+        # apply filters first
         if not passes_filters(recipe, filters):
             continue
         
-        # Calculate match
+        # calculate match
         match_data = calculate_match(recipe['ingredients'], user_ingredients)
         
-        # Only consider recipes above threshold but not perfect matches
+        # only consider recipes above threshold but not perfect matches
         if min_match_threshold <= match_data['percentage'] < 100:
             partial_matches.append({
                 'id': recipe['id'],
@@ -135,13 +135,13 @@ def find_partial_matches(user_ingredients, recipes, filters=None, min_match_thre
                 'cuisine': recipe.get('cuisine', 'unknown')
             })
     
-    # Sort by match percentage (closest matches first)
+    # sort by match percentage (closest matches first)
     partial_matches.sort(key=lambda x: x['match_percentage'], reverse=True)
     
     return partial_matches
 
 def display_results(results, ingred_input, filters=None):
-    #Displays search results
+    #displays search results
     print("\n" + "=" * 70)
     print(f"Your ingredients: {ingred_input}")
     print("=" * 70)

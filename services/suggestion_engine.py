@@ -14,44 +14,42 @@ def generate_shopping_suggestions(user_ingredients, recipes, filters=None, top_n
     ingredient_impact = {}
     
     if has_matches:
-        # Strategy 1: User has SOME matches - look for close recipes (50%+)
-        # This helps them unlock recipes they're almost ready for
+        # strat 1: user has SOME matches; look for close recipes (50%+)
         partial_matches = find_partial_matches(
             user_ingredients, 
             recipes, 
             filters, 
             min_match_threshold=50,
-            exclude_ids=exclude_ids  # ← Exclude already-shown recipes
+            exclude_ids=exclude_ids  # exclude already shown recipes
         )
         
-        # If even 50% threshold returns nothing, lower it
+        # if even 50% threshold returns nothing, lower it
         if not partial_matches:
             partial_matches = find_partial_matches(
                 user_ingredients, 
                 recipes, 
                 filters, 
                 min_match_threshold=25,
-                exclude_ids=exclude_ids  # ← Still exclude them
+                exclude_ids=exclude_ids  # still exclude them
             )
     
     else:
-        # Strategy 2: User has ZERO matches - analyze ALL filtered recipes
-        # Find ingredients that appear most frequently across all recipes
-        # This helps them build toward SOMETHING cookable
+        # strat 2: User has ZERO matches; analyze all filtered recipes
+        # find ingredients that appear most frequently across all recipes
         
         print("\n💡 Analyzing ALL recipes to find the most useful ingredients...")
         
         partial_matches = []
         for recipe in recipes:
-            # Skip recipes already shown (though this shouldn't happen with zero matches)
+            # skip recipes already shown
             if recipe['id'] in exclude_ids:
                 continue
             
-            # Still apply filters (dietary restrictions are important!)
+            # still apply filters
             if not passes_filters(recipe, filters):
                 continue
             
-            # Don't care about match percentage - just grab the recipe
+            # just grab the recipe
             match_data = calculate_match(recipe['ingredients'], user_ingredients)
             
             partial_matches.append({
@@ -65,7 +63,7 @@ def generate_shopping_suggestions(user_ingredients, recipes, filters=None, top_n
                 'cuisine': recipe.get('cuisine', 'unknown')
             })
     
-    # Now count missing ingredient frequency across our candidate recipes
+    # count missing ingredient frequency across candidate recipes
     for recipe in partial_matches:
         for missing_ing in recipe['missing_ingredients']:
             if missing_ing not in ingredient_impact:
@@ -78,7 +76,7 @@ def generate_shopping_suggestions(user_ingredients, recipes, filters=None, top_n
             ingredient_impact[missing_ing]['unlock_count'] += 1
             ingredient_impact[missing_ing]['recipe_names'].append(recipe['name'])
     
-    # Convert to list and sort by unlock count
+    # convert to list and sort by unlock count
     suggestions = list(ingredient_impact.values())
     suggestions.sort(key=lambda x: x['unlock_count'], reverse=True)
     
@@ -92,8 +90,8 @@ def display_suggestions(suggestions, partial_matches=None):
     print("=" * 70)
     
     if not suggestions:
-        print("\n   No suggestions available - you might need more ingredients!")
-        print("   Try adding some common items like eggs, butter, or garlic.\n")
+        print("\nNo suggestions available - you might need more ingredients!")
+        print("Try adding some common items like eggs, butter, or garlic.\n")
         return
     
     print("\n Get these ingredients to unlock more recipes:\n")
@@ -101,24 +99,24 @@ def display_suggestions(suggestions, partial_matches=None):
     for i, suggestion in enumerate(suggestions, 1):
         unlock_text = "recipe" if suggestion['unlock_count'] == 1 else "recipes"
         print(f"{i}. {suggestion['name'].upper()}")
-        print(f"   Unlocks: {suggestion['unlock_count']} {unlock_text}")
+        print(f"Unlocks: {suggestion['unlock_count']} {unlock_text}")
         
-        # Show first 3 recipes it unlocks
+        # show first 3 recipes it unlocks
         recipe_preview = suggestion['recipe_names'][:3]
         if len(suggestion['recipe_names']) > 3:
             recipe_preview.append(f"...and {len(suggestion['recipe_names']) - 3} more")
         
-        print(f"   Recipes: {', '.join(recipe_preview)}")
+        print(f"Recipes: {', '.join(recipe_preview)}")
         print()
     
     # optionally show partial matches
     if partial_matches:
         print("\n" + "=" * 70)
-        print("🔍 RECIPES YOU'RE CLOSE TO MAKING")
+        print("RECIPES YOU'RE CLOSE TO MAKING")
         print("=" * 70)
         print(f"\nFound {len(partial_matches)} recipes you're almost ready for:\n")
         
-        for i, recipe in enumerate(partial_matches[:5], 1):  # Show top 5
+        for i, recipe in enumerate(partial_matches[:5], 1):  # show top 5
             bars = "█" * int(recipe['match_percentage'] / 10)
             empty_bars = "░" * (10 - int(recipe['match_percentage'] / 10))
             

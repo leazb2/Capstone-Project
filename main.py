@@ -17,7 +17,7 @@ from services.suggestion_engine import (
 def get_user_filters():
     # get filters
     print("\n" + "-" * 70)
-    print("⚙️  Optional Filters (press Enter to skip)")
+    print("Optional Filters (press Enter to skip)")
     print("-" * 70)
     
     filters = {}
@@ -40,35 +40,39 @@ def get_user_filters():
 
 def handle_no_matches(user_ing, recipes, filters, master_ingredients):
     print("\n" + "=" * 70)
-    print("No exact matches found - here's some options: ")
+    print("No exact matches found - let's find some options!")
     print("=" * 70)
-        
-    # pass has_matches=False since we got zero results
-    suggestions = generate_shopping_suggestions(user_ing, recipes, filters, top_n=5, has_matches=False, exclude_ids=shown_recipe_ids)
-        
-    # for display, try to find partial matches at low threshold
-    partial_matches = find_partial_matches(user_ing, recipes, filters, min_match_threshold=10, exclude_ids=shown_recipe_ids)
-        
+    
+    # Generate suggestions with no matches strategy
+    suggestions = generate_shopping_suggestions(user_ing, recipes, filters, top_n=5, has_matches=False, exclude_ids=set())
+    
+    # Find any partial matches at low threshold
+    partial_matches = find_partial_matches(user_ing, recipes, filters, min_match_threshold=10, exclude_ids=set())
+    
     display_suggestions(suggestions, partial_matches)
-        
-    # interactive ingredient addition
+    
+    # Offer to add ingredients and search again
     if suggestions:
         print("\n" + "-" * 70)
         print("Want to add one of these ingredients and search again? (y/n)")
         add_more = input("Your choice: ").strip().lower()
-            
+        
         if add_more == 'y':
             print("\nEnter ingredient to add:")
             new_ingredient = input("> ").strip()
-                
+            
             if new_ingredient:
-                user_ing.append(new_ingredient.lower())
-                print(f"\nAdded '{new_ingredient}' to your ingredients!")
+                # Fuzzy match the new ingredient
+                new_ing_parsed, _ = parse_ingredients(new_ingredient, master_ingredients, interactive=True)
+                
+                if new_ing_parsed:
+                    user_ing.extend(new_ing_parsed)
+                    print(f"\nAdded '{', '.join(new_ing_parsed)}' to your ingredients!")
                     
-                # Re-run search
-                updated_input = ", ".join(user_ing)
-                results = search_recipes(user_ing, recipes, filters)
-                display_results(results, updated_input, filters)
+                    # Re-run search
+                    updated_input = ", ".join(user_ing)
+                    results = search_recipes(user_ing, recipes, filters)
+                    display_results(results, updated_input, filters)
 
 def handle_partial_matches(user_ing, recipes, filters, shown_recipe_ids):
     # user has SOME matches but none are perfect

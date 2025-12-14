@@ -126,10 +126,10 @@ fi
 echo ""
 echo "Step 8: Verifying installation..."
 RECIPE_COUNT=$(sudo -u postgres psql -d smartfridge -t -c "SELECT COUNT(*) FROM recipe;" | tr -d ' ')
-if [ "$RECIPE_COUNT" -eq "10" ]; then
+if [ "$RECIPE_COUNT" -eq "35" ]; then
     print_success "Database verified: $RECIPE_COUNT recipes found"
 else
-    print_error "Verification failed: Expected 10 recipes, found $RECIPE_COUNT"
+    print_error "Verification failed: Expected 35 recipes, found $RECIPE_COUNT"
 fi
 
 echo ""

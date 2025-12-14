@@ -79,7 +79,6 @@ def register():
     result = handle_register_user(
         username=data.get('username'),
         password=data.get('password'),
-        email=data.get('email')
     )
     
     if result['success']:

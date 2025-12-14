@@ -588,6 +588,96 @@
             margin-bottom: 1rem;
         }
 
+        /* Cooking Terms Glossary */
+        .cooking-term {
+            color: #D97642;
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            cursor: help;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .cooking-term:hover {
+            background: #FFF5E6;
+            text-decoration-style: solid;
+        }
+
+        .term-popup {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 500px;
+            width: 90%;
+            background: white;
+            border: 3px solid #D97642;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            z-index: 2000;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .term-popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #E5D5C5;
+        }
+
+        .term-popup-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #D97642;
+            font-family: 'Playfair Display', serif;
+            text-transform: capitalize;
+        }
+
+        .term-popup-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .term-popup-close:hover {
+            background: #F5EDE4;
+            color: #2C2416;
+        }
+
+        .term-popup-definition {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #2C2416;
+        }
+
+        .term-popup-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
         /* Checkbox styles */
         .checkbox-group {
             display: flex;
@@ -627,12 +717,92 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // Cooking Term Popup Component
+        function CookingTermPopup({ term, definition, onClose }) {
+            useEffect(() => {
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') onClose();
+                };
+                document.addEventListener('keydown', handleEscape);
+                return () => document.removeEventListener('keydown', handleEscape);
+            }, [onClose]);
+
+            return (
+                <div className="term-popup">
+                    <div className="term-popup-header">
+                        <div>
+                            <div className="term-popup-icon">📖</div>
+                            <div className="term-popup-title">{term}</div>
+                        </div>
+                        <button className="term-popup-close" onClick={onClose}>×</button>
+                    </div>
+                    <div className="term-popup-definition">
+                        {definition}
+                    </div>
+                </div>
+            );
+        }
+
+        // Function to highlight cooking terms in text
+        function highlightCookingTerms(text, cookingTerms, onTermClick) {
+            if (!text || !cookingTerms || Object.keys(cookingTerms).length === 0) {
+                return <span>{text}</span>;
+            }
+
+            // Create a regex pattern to match any cooking term (case-insensitive)
+            const termPattern = Object.keys(cookingTerms)
+                .sort((a, b) => b.length - a.length) // Longer terms first to avoid partial matches
+                .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) // Escape regex special chars
+                .join('|');
+            
+            const regex = new RegExp(`\\b(${termPattern})\\b`, 'gi');
+            
+            const parts = [];
+            let lastIndex = 0;
+            let match;
+            let key = 0;
+
+            while ((match = regex.exec(text)) !== null) {
+                // Add text before the match
+                if (match.index > lastIndex) {
+                    parts.push(<span key={`text-${key++}`}>{text.substring(lastIndex, match.index)}</span>);
+                }
+                
+                // Add the highlighted term
+                const matchedTerm = match[0];
+                const termKey = matchedTerm.toLowerCase();
+                
+                parts.push(
+                    <span
+                        key={`term-${key++}`}
+                        className="cooking-term"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onTermClick(matchedTerm, cookingTerms[termKey]);
+                        }}
+                        title="Click to see definition"
+                    >
+                        {matchedTerm}
+                    </span>
+                );
+                
+                lastIndex = regex.lastIndex;
+            }
+            
+            // Add remaining text
+            if (lastIndex < text.length) {
+                parts.push(<span key={`text-${key++}`}>{text.substring(lastIndex)}</span>);
+            }
+            
+            return parts.length > 0 ? parts : <span>{text}</span>;
+        }
+
         // ============================================================================
         // MANUAL API URL CONFIGURATION
         // ============================================================================
         // If auto-detection fails, uncomment and set your Codespace URL here:
         // const MANUAL_API_URL = 'https://YOUR-CODESPACE-5000.app.github.dev/api';
-        const MANUAL_API_URL = 'https://automatic-winner-5gp6gg77j9gwc47qx-5000.app.github.dev/api';  // Leave as null to use auto-detection 
+        const MANUAL_API_URL = 'https://automatic-winner-5gp6gg77j9gwc47qx-5000.app.github.dev/api';  // Leave as null to use auto-detection         
         
         // Auto-detect API URL with improved Codespace support
         function getApiUrl() {
@@ -878,6 +1048,22 @@
 
         function MainApp({ user, onLogout }) {
             const [showProfile, setShowProfile] = useState(false);
+            const [cookingTerms, setCookingTerms] = useState({});
+
+            useEffect(() => {
+                loadCookingTerms();
+            }, []);
+
+            const loadCookingTerms = async () => {
+                try {
+                    const response = await fetch(`${API_URL}/cooking-terms`);
+                    const data = await response.json();
+                    setCookingTerms(data.terms || {});
+                    console.log(`📚 Loaded ${Object.keys(data.terms || {}).length} cooking terms`);
+                } catch (error) {
+                    console.error('Failed to load cooking terms:', error);
+                }
+            };
 
             return (
                 <>
@@ -901,7 +1087,7 @@
                         </div>
                     </div>
 
-                    <SmartFridgeApp />
+                    <SmartFridgeApp cookingTerms={cookingTerms} />
 
                     {showProfile && <ProfileModal onClose={() => setShowProfile(false)} user={user} />}
                 </>
@@ -1189,7 +1375,7 @@
         }
 
         // Rest of SmartFridgeApp component remains the same but with updated API calls...
-        function SmartFridgeApp() {
+        function SmartFridgeApp({ cookingTerms }) {
             const [pantryIngredients, setPantryIngredients] = useState([]);  // User's actual pantry
             const [searchIngredients, setSearchIngredients] = useState([]);  // Temporary search mode
             const [currentIngredient, setCurrentIngredient] = useState('');
@@ -1241,10 +1427,16 @@
                         credentials: 'include'
                     });
                     const profileData = await profileResponse.json();
+                    console.log('📋 Profile data received:', profileData);
+                    
                     const restrictions = profileData?.profile?.dietary_restrictions || [];
+                    // Filter out empty strings
+                    const validRestrictions = restrictions.filter(r => r && r.trim().length > 0);
+                    
+                    console.log('🍽️ Dietary restrictions loaded:', validRestrictions);
                     
                     // Store dietary restrictions for display
-                    setUserDietaryRestrictions(restrictions);
+                    setUserDietaryRestrictions(validRestrictions);
                 } catch (error) {
                     console.error('Failed to load user data:', error);
                 }
@@ -1389,7 +1581,7 @@
             };
 
             if (cookingMode) {
-                return <CookingMode mode={cookingMode} setMode={setCookingMode} />;
+                return <CookingMode mode={cookingMode} setMode={setCookingMode} cookingTerms={cookingTerms} />;
             }
 
             const currentIngredients = searchMode === 'pantry' ? pantryIngredients : searchIngredients;
@@ -1606,21 +1798,26 @@
             );
         }
 
-        function CookingMode({ mode, setMode }) {
+        function CookingMode({ mode, setMode, cookingTerms }) {
             const { recipe, currentStep } = mode;
             const totalSteps = recipe.instructions.length;
             const step = recipe.instructions[currentStep];
             const progress = ((currentStep + 1) / totalSteps) * 100;
+            
+            // Cooking term popup state
+            const [selectedTerm, setSelectedTerm] = useState(null);
 
             const nextStep = () => {
                 if (currentStep < totalSteps - 1) {
                     setMode({ ...mode, currentStep: currentStep + 1 });
+                    setSelectedTerm(null); // Close popup when changing steps
                 }
             };
 
             const prevStep = () => {
                 if (currentStep > 0) {
                     setMode({ ...mode, currentStep: currentStep - 1 });
+                    setSelectedTerm(null); // Close popup when changing steps
                 }
             };
 
@@ -1628,6 +1825,10 @@
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
                 return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+            
+            const handleTermClick = (term, definition) => {
+                setSelectedTerm({ term, definition });
             };
 
             return (
@@ -1649,7 +1850,7 @@
                                 Step {currentStep + 1} of {totalSteps}
                             </div>
                             <div className="step-instruction">
-                                {step.instruction}
+                                {highlightCookingTerms(step.instruction, cookingTerms, handleTermClick)}
                             </div>
                             {step.time > 0 && (
                                 <div className="step-timer">
@@ -1661,6 +1862,22 @@
                                     🥘 Ingredients: {step.ingredients_needed.join(', ')}
                                 </div>
                             )}
+                            
+                            {/* Cooking tip about clickable terms */}
+                            {cookingTerms && Object.keys(cookingTerms).length > 0 && (
+                                <div style={{
+                                    marginTop: '1rem',
+                                    padding: '0.75rem',
+                                    background: '#FFF5E6',
+                                    borderRadius: '8px',
+                                    fontSize: '0.9rem',
+                                    color: '#666',
+                                    textAlign: 'center'
+                                }}>
+                                    💡 <span style={{color: '#D97642', fontWeight: '600'}}>Underlined terms</span> are cooking terms - click them for definitions!
+                                </div>
+                            )}
+                            
                             <div className="step-navigation">
                                 <button
                                     className="nav-btn nav-btn-prev"
@@ -1690,6 +1907,15 @@
                                 Back to Recipes
                             </button>
                         </div>
+                    )}
+                    
+                    {/* Cooking Term Popup */}
+                    {selectedTerm && (
+                        <CookingTermPopup
+                            term={selectedTerm.term}
+                            definition={selectedTerm.definition}
+                            onClose={() => setSelectedTerm(null)}
+                        />
                     )}
                 </div>
             );

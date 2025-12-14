@@ -251,7 +251,7 @@ def get_ingredients():
 @app.route('/api/ingredients', methods=['POST'])
 @login_required
 def add_ingredient():
-    # add ingredient to current user's pantry
+    # add ingredient to current user's pantry"""
     user_id = get_current_user_id()
     data = request.get_json()
     
@@ -281,7 +281,7 @@ def remove_ingredient(ingredient_id):
 
 @app.route('/api/recipes/search', methods=['POST'])
 def search_recipes():
-    # search recipes (public endpoint, but uses session if available)
+    # search recipes (public endpoint, but uses session if available)"""
     data = request.get_json()
     ingredient_names = data.get('ingredient_names', [])
     filters = data.get('filters', {})
@@ -289,7 +289,7 @@ def search_recipes():
     # get user_id from session if logged in (for dietary restriction filtering)
     user_id = get_current_user_id()
     
-    print(f"\n🔍 Recipe search request:")
+    print(f"\n Recipe search request:")
     print(f"   User ID: {user_id or 'Not logged in'}")
     print(f"   Ingredients: {ingredient_names}")
     print(f"   Filters: {filters}")
@@ -462,6 +462,58 @@ def get_user_analytics_endpoint():
     }), 200
 
 # ============================================================================
+# COOKING TERMS ENDPOINTS
+# ============================================================================
+
+@app.route('/api/cooking-terms', methods=['GET'])
+def get_all_cooking_terms():
+    # get all cooking terms for glossary
+    from cooking_terms import get_all_terms, get_term_definition
+    
+    terms = get_all_terms()
+    glossary = {
+        term: get_term_definition(term)
+        for term in terms
+    }
+    
+    return jsonify({
+        'terms': glossary,
+        'count': len(glossary)
+    }), 200
+
+@app.route('/api/cooking-terms/<term_name>', methods=['GET'])
+def get_cooking_term(term_name):
+    # get definition for a specific cooking term
+    from cooking_terms import get_term_definition
+    
+    definition = get_term_definition(term_name)
+    
+    if definition:
+        return jsonify({
+            'term': term_name,
+            'definition': definition
+        }), 200
+    else:
+        return jsonify({
+            'error': 'Term not found'
+        }), 404
+
+@app.route('/api/cooking-terms/search', methods=['POST'])
+def search_cooking_terms():
+    # search cooking terms
+    from cooking_terms import search_terms
+    
+    data = request.get_json()
+    query = data.get('query', '')
+    
+    results = search_terms(query)
+    
+    return jsonify({
+        'results': results,
+        'count': len(results)
+    }), 200
+
+# ============================================================================
 # HEALTH CHECK
 # ============================================================================
 
@@ -489,7 +541,7 @@ if __name__ == '__main__':
     print("SmartFridge API Starting")
     if USE_DATABASE:
         print("Storage: PostgreSQL")
-        print("Features: User Accounts | Profiles | Persistence")
+        print("Features:  User Accounts | Profiles | Persistence")
     else:
         print("Storage: In-Memory (temporary)")
         print("Features Lost: User Accounts (PostgreSQL required)")

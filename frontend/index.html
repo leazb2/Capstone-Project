@@ -802,8 +802,8 @@
         // ============================================================================
         // If auto-detection fails, uncomment and set your Codespace URL here:
         // const MANUAL_API_URL = 'https://YOUR-CODESPACE-5000.app.github.dev/api';
-        const MANUAL_API_URL = 'https://automatic-winner-5gp6gg77j9gwc47qx-5000.app.github.dev/api';  // Leave as null to use auto-detection         
-        
+        const MANUAL_API_URL = 'https://automatic-winner-5gp6gg77j9gwc47qx-5000.app.github.dev/api';  // Leave as null to use auto-detection 
+                
         // Auto-detect API URL with improved Codespace support
         function getApiUrl() {
             // Use manual override if provided
@@ -1390,6 +1390,7 @@
             const [favorites, setFavorites] = useState(new Set());
             const [searchMode, setSearchMode] = useState('pantry');  // 'pantry' or 'search'
             const [userDietaryRestrictions, setUserDietaryRestrictions] = useState([]);  // User's dietary restrictions
+            const [quickPick, setQuickPick] = useState(null);  // "Just Tell Me What To Cook" recommendation
 
             useEffect(() => {
                 loadUserData();
@@ -1570,14 +1571,39 @@
                 setSearchMode('search');
                 setSearchIngredients([]);
                 setRecipes([]);
+                setQuickPick(null);  // Clear quick pick when switching modes
             };
 
             const switchToPantryMode = () => {
                 setSearchMode('pantry');
                 setSearchIngredients([]);
+                setQuickPick(null);  // Clear quick pick when switching modes
                 if (pantryIngredients.length > 0) {
                     performSearch(pantryIngredients);
                 }
+            };
+
+            const getQuickPick = () => {
+                // Filter for 100% matches only
+                const perfectMatches = recipes.filter(r => r.match_percentage === 100);
+                
+                if (perfectMatches.length === 0) {
+                    setQuickPick({ error: 'no_perfect_match', count: recipes.length });
+                    return;
+                }
+                
+                // Randomly pick one from perfect matches
+                const randomIndex = Math.floor(Math.random() * perfectMatches.length);
+                const selected = perfectMatches[randomIndex];
+                
+                setQuickPick({
+                    recipe: selected,
+                    totalPerfectMatches: perfectMatches.length
+                });
+            };
+
+            const clearQuickPick = () => {
+                setQuickPick(null);
             };
 
             if (cookingMode) {
@@ -1648,6 +1674,167 @@
                             </div>
                         )}
                     </div>
+
+                    {/* Quick Pick - "Just Tell Me What To Cook" */}
+                    {searchMode === 'pantry' && pantryIngredients.length > 0 && (
+                        <div className="section">
+                            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+                                <h2 style={{margin: 0}}>🎲 Decision Helper</h2>
+                                <button 
+                                    className="btn btn-primary"
+                                    onClick={getQuickPick}
+                                    disabled={recipes.length === 0}
+                                >
+                                    🎯 Just Tell Me What To Cook!
+                                </button>
+                            </div>
+
+                            {quickPick && (
+                                quickPick.error ? (
+                                    <div style={{
+                                        padding: '1.5rem',
+                                        background: 'linear-gradient(135deg, #FFF5E6, #FFE8CC)',
+                                        border: '2px solid #D97642',
+                                        borderRadius: '12px',
+                                        textAlign: 'center'
+                                    }}>
+                                        <div style={{fontSize: '3rem', marginBottom: '0.5rem'}}>🤔</div>
+                                        <h3 style={{color: '#D97642', marginBottom: '0.5rem'}}>
+                                            No Perfect Matches Yet
+                                        </h3>
+                                        <p style={{color: '#666', marginBottom: '0.5rem'}}>
+                                            You're missing ingredients for all recipes. 
+                                            {quickPick.count > 0 && ` Found ${quickPick.count} partial matches though!`}
+                                        </p>
+                                        <p style={{fontSize: '0.9rem', color: '#999'}}>
+                                            Try adding more ingredients to your pantry, or check out the recipes below to see what you're missing.
+                                        </p>
+                                        <button 
+                                            className="btn btn-secondary"
+                                            onClick={clearQuickPick}
+                                            style={{marginTop: '1rem'}}
+                                        >
+                                            Got it
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{
+                                        padding: '2rem',
+                                        background: 'linear-gradient(135deg, #E8F5E9, #C8E6C9)',
+                                        border: '3px solid #4CAF50',
+                                        borderRadius: '12px',
+                                        position: 'relative'
+                                    }}>
+                                        <button
+                                            onClick={clearQuickPick}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '1rem',
+                                                right: '1rem',
+                                                background: 'rgba(255,255,255,0.9)',
+                                                border: '2px solid #4CAF50',
+                                                borderRadius: '50%',
+                                                width: '32px',
+                                                height: '32px',
+                                                fontSize: '1.2rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: '#4CAF50'
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                        
+                                        <div style={{textAlign: 'center', marginBottom: '1.5rem'}}>
+                                            <div style={{fontSize: '3rem', marginBottom: '0.5rem'}}>🎉</div>
+                                            <h2 style={{color: '#4CAF50', margin: '0 0 0.5rem 0', fontSize: '1.8rem'}}>
+                                                You Can Cook This Now!
+                                            </h2>
+                                            <p style={{color: '#666', fontSize: '0.9rem'}}>
+                                                {quickPick.totalPerfectMatches > 1 
+                                                    ? `Randomly picked from ${quickPick.totalPerfectMatches} perfect matches` 
+                                                    : 'Your only perfect match!'}
+                                            </p>
+                                        </div>
+
+                                        <div style={{
+                                            background: 'white',
+                                            borderRadius: '8px',
+                                            padding: '1.5rem',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                                        }}>
+                                            <h3 style={{margin: '0 0 1rem 0', color: '#2C2416', fontSize: '1.5rem'}}>
+                                                {quickPick.recipe.name}
+                                            </h3>
+                                            
+                                            <div style={{
+                                                display: 'flex',
+                                                gap: '1rem',
+                                                marginBottom: '1rem',
+                                                flexWrap: 'wrap'
+                                            }}>
+                                                <div style={{
+                                                    padding: '0.5rem 1rem',
+                                                    background: '#4CAF50',
+                                                    color: 'white',
+                                                    borderRadius: '20px',
+                                                    fontWeight: '600',
+                                                    fontSize: '1.1rem'
+                                                }}>
+                                                    ✅ 100% Match
+                                                </div>
+                                                <div style={{padding: '0.5rem 1rem', background: '#F5EDE4', borderRadius: '20px'}}>
+                                                    ⏱️ {quickPick.recipe.total_time} min
+                                                </div>
+                                                <div style={{padding: '0.5rem 1rem', background: '#F5EDE4', borderRadius: '20px'}}>
+                                                    👨‍🍳 {quickPick.recipe.skill_level}
+                                                </div>
+                                                <div style={{padding: '0.5rem 1rem', background: '#F5EDE4', borderRadius: '20px'}}>
+                                                    🍽️ {quickPick.recipe.servings} servings
+                                                </div>
+                                            </div>
+
+                                            <div style={{marginBottom: '1rem'}}>
+                                                <strong style={{color: '#4CAF50'}}>✅ You have all ingredients:</strong>
+                                                <div style={{marginTop: '0.5rem', color: '#666'}}>
+                                                    {quickPick.recipe.matched_ingredients.join(', ')}
+                                                </div>
+                                            </div>
+
+                                            <div style={{display: 'flex', gap: '1rem', marginTop: '1.5rem'}}>
+                                                <button
+                                                    className="btn btn-primary"
+                                                    onClick={() => startCooking(quickPick.recipe.id)}
+                                                    style={{flex: 1, fontSize: '1.1rem', padding: '0.75rem'}}
+                                                >
+                                                    👨‍🍳 Let's Cook This!
+                                                </button>
+                                                <button
+                                                    className={`btn-favorite ${favorites.has(quickPick.recipe.id.toString()) ? 'favorited' : ''}`}
+                                                    onClick={() => toggleFavorite(quickPick.recipe.id, quickPick.recipe.name)}
+                                                    style={{fontSize: '1.5rem', padding: '0.75rem 1.5rem'}}
+                                                >
+                                                    {favorites.has(quickPick.recipe.id.toString()) ? '★' : '☆'}
+                                                </button>
+                                            </div>
+
+                                            {quickPick.totalPerfectMatches > 1 && (
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    onClick={getQuickPick}
+                                                    style={{width: '100%', marginTop: '1rem'}}
+                                                >
+                                                    🎲 Pick Another Random Recipe
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    )}
 
                     <div className="section">
                         <h2>{searchMode === 'pantry' ? 'Your Pantry' : 'Try These Ingredients'}</h2>

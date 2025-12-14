@@ -668,7 +668,7 @@ def get_user_analytics_endpoint():
 @app.route('/api/substitutions/<ingredient>', methods=['GET'])
 def get_substitutions(ingredient):
     # get substitutions for an ingredient based on dietary restrictions
-    from substitutions import get_substitutions_for_ingredient
+    from services.substitutions import get_substitutions_for_ingredient
     
     # get dietary restrictions from query params or session
     user_id = get_current_user_id()
@@ -698,7 +698,7 @@ def get_substitutions(ingredient):
 @app.route('/api/substitutions', methods=['POST'])
 def get_multiple_substitutions():
     # get substitutions for multiple ingredients
-    from substitutions import get_substitutions_for_ingredient
+    from services.substitutions import get_substitutions_for_ingredient
     
     data = request.get_json()
     ingredients = data.get('ingredients', [])
@@ -731,7 +731,7 @@ def get_multiple_substitutions():
 @app.route('/api/cooking-terms', methods=['GET'])
 def get_all_cooking_terms():
     # get all cooking terms for glossary
-    from cooking_terms import get_all_terms, get_term_definition
+    from services.cooking_terms import get_all_terms, get_term_definition
     
     terms = get_all_terms()
     glossary = {
@@ -747,7 +747,7 @@ def get_all_cooking_terms():
 @app.route('/api/cooking-terms/<term_name>', methods=['GET'])
 def get_cooking_term(term_name):
     # get definition for a specific cooking term
-    from cooking_terms import get_term_definition
+    from services.cooking_terms import get_term_definition
     
     definition = get_term_definition(term_name)
     
@@ -764,7 +764,7 @@ def get_cooking_term(term_name):
 @app.route('/api/cooking-terms/search', methods=['POST'])
 def search_cooking_terms():
     # search cooking terms
-    from cooking_terms import search_terms
+    from services.cooking_terms import search_terms
     
     data = request.get_json()
     query = data.get('query', '')

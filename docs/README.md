@@ -1,5 +1,12 @@
 # Capstone-Project: SmartFridge - Smart Recipe Recommendation System
 
+## Team Members
+- Kai Blair
+- Luke Angell
+- James Miles
+
+---
+
 **Find recipes based on what you actually have in your fridge!**
 
 SmartFridge is a full-stack web application that helps you discover recipes you can make with your available ingredients. Built with a focus on software engineering best practices, featuring CQRS+EDA architecture, user authentication, and a distinctive vintage recipe card aesthetic.
@@ -119,9 +126,7 @@ The backend API will start on the port shown in your Codespaces environment (typ
 
 ### 5. Access the Application
 
-**Frontend:** Visit your GitHub Pages URL (usually `https://klb4mv-a11y.github.io/Capstone-Project`)
-
-**Backend Health Check:** Access your Codespaces forwarded port URL + `/health`
+**Frontend:** Visit the GitHub Pages URL: `https://klb4mv-a11y.github.io/Capstone-Project`
 
 ---
 
@@ -442,13 +447,6 @@ pip install -r requirements.txt
 - `favorite` - User favorite recipes
 - `user_equipment` - User's kitchen appliances
 - `search_log` - Search analytics
-
----
-
-## Team Members
-- Kai Blair
-- Luke Angell
-- James Miles
 
 ---
 
